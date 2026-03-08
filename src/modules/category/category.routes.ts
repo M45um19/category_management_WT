@@ -15,5 +15,5 @@ router.get("/", categoryController.getAllCategories);
 router.get("/search", categoryController.getCategory);
 router.get("/:id", categoryController.getCategory);
 router.patch("/:id/status", categoryController.updateCategoryStatus);
-
+router.delete("/:id", categoryController.deleteCategory);
 export default router;

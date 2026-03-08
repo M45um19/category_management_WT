@@ -110,7 +110,7 @@ export class CategoryService {
         return result;
     }
 
-    private async deactivateChildren(parentId: mongoose.Types.ObjectId, isActive: boolean) {
+    private async changeStatusChildren(parentId: mongoose.Types.ObjectId, isActive: boolean) {
 
         const children = await this.repository.findChildren(parentId);
 
@@ -122,7 +122,7 @@ export class CategoryService {
             if (cacheCategory) {
                 await redis.del(`category:${child._id}`);
             }
-            await this.deactivateChildren(child._id, isActive);
+            await this.changeStatusChildren(child._id, isActive);
         }
     }
 
@@ -137,8 +137,36 @@ export class CategoryService {
         }
 
         await this.repository.updateStatus(category._id, isActive);
-        await this.deactivateChildren(category._id, isActive);
+        await this.changeStatusChildren(category._id, isActive);
         await redis.del("categories:all");
+
+        return;
+    }
+
+    private async deleteChildren(parentId: mongoose.Types.ObjectId){
+        const children = await this.repository.findChildren(parentId)
+
+        for(const child of children){
+            await this.repository.deleteCategory(child._id);
+            const cacheCategory = await redis.get(`category:${child._id}`)
+            if(cacheCategory){
+                await redis.del(`category:${child._id}`);
+            }
+
+            await this.deleteChildren(child._id);
+        }
+    }
+
+    async deleteCategory(id: string) {
+        const category = await this.repository.findById(new mongoose.Types.ObjectId(id));
+
+        if(!category){
+            throw new Error("Category not found")
+        }
+
+        await this.repository.deleteCategory(category._id)
+        await this.deleteChildren(category._id);
+        await redis.del(`category:${category._id}`);
 
         return;
     }

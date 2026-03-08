@@ -39,13 +39,23 @@ export class CategoryController {
         const { id } = req.params;
         const { isActive } = req.body;
 
-        const result = await this.service.updateCategoryStatus(id as string, isActive);
+        await this.service.updateCategoryStatus(id as string, isActive);
 
         res.status(200).json({
             success: true,
             message: "Category and all the descendants status updated",
-            data: result
         });
+    });
+
+    deleteCategory = catchAsync(async (req: Request, res: Response) => {
+        const {id} = req.params;
+
+        await this.service.deleteCategory(id as string);
+
+        res.status(200).json({
+            success: true,
+            message: "Category and all the descendants status deleted"
+        })
     });
 }
 const repository = new CategoryRepository();

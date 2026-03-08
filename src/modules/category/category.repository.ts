@@ -36,4 +36,8 @@ export class CategoryRepository {
   async updateStatus(id: mongoose.Types.ObjectId, isActive: boolean) {
     return Category.findByIdAndUpdate(id, { isActive }, { new: true });
   }
+  
+  async deleteCategory(id: mongoose.Types.ObjectId) {
+    return Category.findByIdAndDelete(id);
+  }
 }
