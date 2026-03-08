@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { CategoryService } from "./category.service";
 import catchAsync from "../../utils/catchAsync";
 import { CategoryRepository } from "./category.repository";
-import { success } from "zod";
+
 
 export class CategoryController {
     constructor(private service: CategoryService) { }
@@ -33,6 +33,20 @@ export class CategoryController {
 
         res.status(200).json({ success: true, data: category });
     });;
+
+    updateCategoryStatus = catchAsync(async (req: Request, res: Response) => {
+
+        const { id } = req.params;
+        const { isActive } = req.body;
+
+        const result = await this.service.updateCategoryStatus(id as string, isActive);
+
+        res.status(200).json({
+            success: true,
+            message: "Category and all the descendants status updated",
+            data: result
+        });
+    });
 }
 const repository = new CategoryRepository();
 const service = new CategoryService(repository);

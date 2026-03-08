@@ -14,4 +14,6 @@ router.post(
 router.get("/", categoryController.getAllCategories);
 router.get("/search", categoryController.getCategory);
 router.get("/:id", categoryController.getCategory);
+router.patch("/:id/status", categoryController.updateCategoryStatus);
+
 export default router;

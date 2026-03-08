@@ -50,9 +50,9 @@ export class CategoryService {
 
     async getAllCategories() {
         const cache = await redis.get("categories:all");
-        if (cache){ 
+        if (cache) {
             return JSON.parse(cache);
-        
+
         }
 
         const categories = await this.repository.findAll();
@@ -108,5 +108,38 @@ export class CategoryService {
         }
 
         return result;
+    }
+
+    private async deactivateChildren(parentId: mongoose.Types.ObjectId, isActive: boolean) {
+
+        const children = await this.repository.findChildren(parentId);
+
+        for (const child of children) {
+
+            await this.repository.updateStatus(child._id, isActive);
+
+            const cacheCategory = await redis.get(`category:${child._id}`);
+            if (cacheCategory) {
+                await redis.del(`category:${child._id}`);
+            }
+            await this.deactivateChildren(child._id, isActive);
+        }
+    }
+
+    async updateCategoryStatus(id: string, isActive: boolean) {
+
+        const category = await this.repository.findById(
+            new mongoose.Types.ObjectId(id)
+        );
+
+        if (!category) {
+            throw new Error("Category not found");
+        }
+
+        await this.repository.updateStatus(category._id, isActive);
+        await this.deactivateChildren(category._id, isActive);
+        await redis.del("categories:all");
+
+        return;
     }
 }

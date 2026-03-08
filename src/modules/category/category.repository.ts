@@ -28,4 +28,12 @@ export class CategoryRepository {
   async create(data: any) {
     return Category.create(data);
   }
+
+  async findChildren(parentId: mongoose.Types.ObjectId) {
+    return Category.find({ parentId });
+  }
+
+  async updateStatus(id: mongoose.Types.ObjectId, isActive: boolean) {
+    return Category.findByIdAndUpdate(id, { isActive }, { new: true });
+  }
 }
