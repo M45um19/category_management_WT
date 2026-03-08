@@ -11,6 +11,20 @@ export class CategoryRepository {
     return Category.findById(id);
   }
 
+  async searchByName(name: string) {
+    return Category.find({
+      name: {
+        $regex: name,
+        $options: "i"
+      },
+      isActive: true
+    }).lean();
+  }
+
+  async findAll() {
+    return Category.find({ isActive: true }).lean();
+  }
+
   async create(data: any) {
     return Category.create(data);
   }

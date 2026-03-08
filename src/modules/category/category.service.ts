@@ -47,4 +47,66 @@ export class CategoryService {
 
         return category;
     }
+
+    async getAllCategories() {
+        const cache = await redis.get("categories:all");
+        if (cache){ 
+            return JSON.parse(cache);
+        
+        }
+
+        const categories = await this.repository.findAll();
+        await redis.set("categories:all", JSON.stringify(categories), "EX", 3600);
+        return categories;
+    }
+
+
+    async getCategory(query: { id?: string; name?: string }) {
+        let categoryData: any;
+        let cacheKey: string | null = null;
+
+        if (query.id) {
+            cacheKey = `category:${query.id}`;
+            const cache = await redis.get(cacheKey);
+            if (cache) return JSON.parse(cache);
+
+            categoryData = await this.repository.findById(
+                new mongoose.Types.ObjectId(query.id)
+            );
+        } else if (query.name) {
+
+            categoryData = await this.repository.searchByName(query.name);
+        }
+
+        if (!categoryData || (Array.isArray(categoryData) && categoryData.length === 0)) {
+            throw new Error("Category not found");
+        }
+        const buildParentChain = async (cat: any): Promise<any> => {
+            const catObj = cat.toObject ? cat.toObject() : cat;
+
+            if (!catObj.parentId) return catObj;
+
+            const parent = await this.repository.findById(catObj.parentId);
+            if (!parent) return catObj;
+
+            return {
+                ...catObj,
+                parent: await buildParentChain(parent),
+            };
+        };
+
+        let result;
+        if (Array.isArray(categoryData)) {
+            result = await Promise.all(
+                categoryData.map((cat) => buildParentChain(cat))
+            );
+        } else {
+            result = await buildParentChain(categoryData);
+        }
+        if (cacheKey && result) {
+            await redis.set(cacheKey, JSON.stringify(result), "EX", 3600);
+        }
+
+        return result;
+    }
 }
