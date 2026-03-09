@@ -1,19 +1,19 @@
 import { Router } from "express";
-import { categoryController } from "./category.controller";
 import { validateBody } from "../../middlewares/validate.middleware";
 import { createCategorySchema } from "./category.types";
+import { CategoryModule } from "./category.module";
 
 const router = Router();
-
+const controller = CategoryModule.controller;
 router.post(
   "/",
   validateBody(createCategorySchema),
-  categoryController.createCategory
+  controller.createCategory
 );
 
-router.get("/", categoryController.getAllCategories);
-router.get("/search", categoryController.getCategory);
-router.get("/:id", categoryController.getCategory);
-router.patch("/:id/status", categoryController.updateCategoryStatus);
-router.delete("/:id", categoryController.deleteCategory);
+router.get("/", controller.getAllCategories);
+router.get("/search", controller.getCategory);
+router.get("/:id", controller.getCategory);
+router.patch("/:id/status", controller.updateCategoryStatus);
+router.delete("/:id", controller.deleteCategory);
 export default router;

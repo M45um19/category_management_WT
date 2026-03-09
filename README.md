@@ -64,6 +64,3 @@ docker compose up --build
 
 ---
 
-## Author
-
-Backend project demonstrating **hierarchical data management with Redis caching**.

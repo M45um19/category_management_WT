@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import { Category } from "./category.model";
+import { AbstractCategoryRepository } from "./category.abstract";
 
-export class CategoryRepository {
+export class CategoryRepository extends AbstractCategoryRepository {
 
   async findByName(name: string) {
     return Category.findOne({ name });
@@ -36,8 +37,38 @@ export class CategoryRepository {
   async updateStatus(id: mongoose.Types.ObjectId, isActive: boolean) {
     return Category.findByIdAndUpdate(id, { isActive }, { new: true });
   }
-  
+
   async deleteCategory(id: mongoose.Types.ObjectId) {
     return Category.findByIdAndDelete(id);
+  }
+
+  async findAllDescendants(parentId: mongoose.Types.ObjectId) {
+    return Category.aggregate([
+      {
+        $match: { _id: parentId }
+      },
+      {
+        $graphLookup: {
+          from: "categories",
+          startWith: "$_id",
+          connectFromField: "_id",
+          connectToField: "parentId",
+          as: "descendants"
+        }
+      }
+    ]);
+  }
+
+  async updateMany(ids: mongoose.Types.ObjectId[], isActive: boolean) {
+    return Category.updateMany(
+      { _id: { $in: ids } },
+      { $set: { isActive } }
+    );
+  }
+
+  async deleteMany(ids: mongoose.Types.ObjectId[]) {
+    return Category.deleteMany({
+      _id: { $in: ids }
+    });
   }
 }

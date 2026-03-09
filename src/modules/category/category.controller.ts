@@ -2,10 +2,11 @@ import { Request, Response } from "express";
 import { CategoryService } from "./category.service";
 import catchAsync from "../../utils/catchAsync";
 import { CategoryRepository } from "./category.repository";
+import { AbstractCategoryService } from "./category.abstract";
 
 
 export class CategoryController {
-    constructor(private service: CategoryService) { }
+    constructor(private service: AbstractCategoryService) { }
     createCategory = catchAsync(async (req: Request, res: Response) => {
         const category = await this.service.createCategory(req.body);
 
@@ -54,10 +55,7 @@ export class CategoryController {
 
         res.status(200).json({
             success: true,
-            message: "Category and all the descendants status deleted"
+            message: "Category and all the descendants deleted"
         })
     });
 }
-const repository = new CategoryRepository();
-const service = new CategoryService(repository);
-export const categoryController = new CategoryController(service);

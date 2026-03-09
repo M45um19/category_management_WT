@@ -2,10 +2,13 @@ import mongoose from "mongoose";
 import { CategoryRepository } from "./category.repository";
 import { CreateCategoryDTO } from "./category.types";
 import { redis } from "../../config/redis";
+import { AbstractCategoryRepository, AbstractCategoryService } from "./category.abstract";
 
-export class CategoryService {
+export class CategoryService extends AbstractCategoryService {
 
-    constructor(private readonly repository: CategoryRepository) { }
+    constructor(private readonly repository: AbstractCategoryRepository) {
+        super();
+    }
     async createCategory(data: CreateCategoryDTO) {
 
         const { name, parentId } = data;
@@ -110,64 +113,59 @@ export class CategoryService {
         return result;
     }
 
-    private async changeStatusChildren(parentId: mongoose.Types.ObjectId, isActive: boolean) {
-
-        const children = await this.repository.findChildren(parentId);
-
-        for (const child of children) {
-
-            await this.repository.updateStatus(child._id, isActive);
-
-            const cacheCategory = await redis.get(`category:${child._id}`);
-            if (cacheCategory) {
-                await redis.del(`category:${child._id}`);
-            }
-            await this.changeStatusChildren(child._id, isActive);
-        }
-    }
 
     async updateCategoryStatus(id: string, isActive: boolean) {
 
-        const category = await this.repository.findById(
-            new mongoose.Types.ObjectId(id)
-        );
+        const parentId = new mongoose.Types.ObjectId(id);
+
+        const category = await this.repository.findById(parentId);
 
         if (!category) {
             throw new Error("Category not found");
         }
 
-        await this.repository.updateStatus(category._id, isActive);
-        await this.changeStatusChildren(category._id, isActive);
+        const result = await this.repository.findAllDescendants(parentId);
+
+        const descendants = result[0]?.descendants || [];
+
+        const ids = [
+            parentId,
+            ...descendants.map((d: any) => d._id)
+        ];
+
+        await this.repository.updateMany(ids, isActive);
+
         await redis.del("categories:all");
 
-        return;
-    }
+        const cacheKeys = ids.map(id => `category:${id}`);
+        await redis.del(...cacheKeys);
 
-    private async deleteChildren(parentId: mongoose.Types.ObjectId){
-        const children = await this.repository.findChildren(parentId)
-
-        for(const child of children){
-            await this.repository.deleteCategory(child._id);
-            const cacheCategory = await redis.get(`category:${child._id}`)
-            if(cacheCategory){
-                await redis.del(`category:${child._id}`);
-            }
-
-            await this.deleteChildren(child._id);
-        }
     }
 
     async deleteCategory(id: string) {
-        const category = await this.repository.findById(new mongoose.Types.ObjectId(id));
 
-        if(!category){
-            throw new Error("Category not found")
+        const parentId = new mongoose.Types.ObjectId(id);
+
+        const category = await this.repository.findById(parentId);
+
+        if (!category) {
+            throw new Error("Category not found");
         }
+        const result = await this.repository.findAllDescendants(parentId);
 
-        await this.repository.deleteCategory(category._id)
-        await this.deleteChildren(category._id);
-        await redis.del(`category:${category._id}`);
+        const descendants = result[0]?.descendants || [];
 
-        return;
+        const ids = [
+            parentId,
+            ...descendants.map((d: any) => d._id)
+        ];
+
+        await this.repository.deleteMany(ids);
+
+        await redis.del("categories:all");
+
+        const cacheKeys = ids.map(id => `category:${id}`);
+        await redis.del(...cacheKeys);
+
     }
 }
