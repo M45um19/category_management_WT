@@ -30,6 +30,8 @@ export abstract class AbstractCategoryRepository {
     abstract deleteMany(
         ids: mongoose.Types.ObjectId[]
     ): Promise<mongoose.DeleteResult>;
+
+    abstract updateCategory(categoyrId: mongoose.Types.ObjectId, name: string, parentId?: mongoose.Types.ObjectId | null, level?: number): Promise<any>
 }
 
 
@@ -43,4 +45,6 @@ export abstract class AbstractCategoryService {
     abstract updateCategoryStatus(id: string, isActive: boolean): Promise<void>;
 
     abstract deleteCategory(id: string): Promise<void>;
+
+    abstract updateCategory(id: string, data: CreateCategoryDTO): Promise<any>;
 }

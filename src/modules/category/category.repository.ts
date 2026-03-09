@@ -71,4 +71,17 @@ export class CategoryRepository extends AbstractCategoryRepository {
       _id: { $in: ids }
     });
   }
+
+  async updateCategory(
+    categoryId: mongoose.Types.ObjectId,
+    name: string,
+    parentId?: mongoose.Types.ObjectId | null,
+    level?: number
+  ) {
+    return Category.findByIdAndUpdate(
+      categoryId,
+      { name, parentId, level },
+      { new: true }
+    );
+  }
 }

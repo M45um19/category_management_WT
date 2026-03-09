@@ -1,9 +1,6 @@
 import { Request, Response } from "express";
-import { CategoryService } from "./category.service";
 import catchAsync from "../../utils/catchAsync";
-import { CategoryRepository } from "./category.repository";
 import { AbstractCategoryService } from "./category.abstract";
-
 
 export class CategoryController {
     constructor(private service: AbstractCategoryService) { }
@@ -58,4 +55,16 @@ export class CategoryController {
             message: "Category and all the descendants deleted"
         })
     });
+
+    updateCategory = catchAsync(async (req: Request, res: Response)=> {
+        const {id} = req.params;
+        
+        const updateCategory = await this.service.updateCategory(id as string, req.body)
+
+        res.status(200).json({
+            success: true,
+            message: "Category updated successfully",
+            data: updateCategory
+        })
+    })
 }

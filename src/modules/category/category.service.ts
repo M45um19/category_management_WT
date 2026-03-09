@@ -166,6 +166,53 @@ export class CategoryService extends AbstractCategoryService {
 
         const cacheKeys = ids.map(id => `category:${id}`);
         await redis.del(...cacheKeys);
+    }
 
+    async updateCategory(
+        id: string,
+        data: CreateCategoryDTO
+    ) {
+        const categoryId = new mongoose.Types.ObjectId(id);
+
+        const category = await this.repository.findById(categoryId);
+        if (!category) throw new Error("Category not found");
+
+        let parentObjectId: mongoose.Types.ObjectId | null = category.parentId;
+        let level = category.level;
+
+        if (data.parentId) {
+            parentObjectId = new mongoose.Types.ObjectId(data.parentId);
+
+            if (parentObjectId.equals(categoryId))
+                throw new Error("Category cannot be its own parent");
+
+            const parent = await this.repository.findById(parentObjectId);
+            if (!parent) throw new Error("Parent category not found");
+            if (!parent.isActive) throw new Error("Parent category is inactive");
+
+            level = parent.level + 1;
+        }
+        if(data.parentId === null){
+            level=1;
+            parentObjectId = null;
+        }
+        const updatedCategory = await this.repository.updateCategory(
+            categoryId,
+            data.name,
+            parentObjectId,
+            level
+        );
+
+        await redis.del("categories:all");
+        await redis.del(`category:${categoryId}`);
+
+        const result = await this.repository.findAllDescendants(categoryId);
+        const descendants = result[0]?.descendants || [];
+        const descendantKeys = descendants.map((d: any) => `category:${d._id}`);
+        if (descendantKeys.length > 0) {
+            await redis.del(...descendantKeys);
+        }
+
+        return updatedCategory;
     }
 }
