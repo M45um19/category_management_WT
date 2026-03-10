@@ -32,6 +32,8 @@ export abstract class AbstractCategoryRepository {
     ): Promise<mongoose.DeleteResult>;
 
     abstract updateCategory(categoyrId: mongoose.Types.ObjectId, name: string, parentId?: mongoose.Types.ObjectId | null, level?: number): Promise<any>
+
+    abstract findAllAncestors(categoryId: mongoose.Types.ObjectId): Promise<any>
 }
 
 
@@ -47,4 +49,6 @@ export abstract class AbstractCategoryService {
     abstract deleteCategory(id: string): Promise<void>;
 
     abstract updateCategory(id: string, data: CreateCategoryDTO): Promise<any>;
+
+    abstract getChildrens(categoryId: string): Promise<any>
 }

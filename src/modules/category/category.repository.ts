@@ -23,7 +23,7 @@ export class CategoryRepository extends AbstractCategoryRepository {
   }
 
   async findAll() {
-    return Category.find({ isActive: true }).lean();
+    return Category.find().lean();
   }
 
   async create(data: any) {
@@ -31,7 +31,7 @@ export class CategoryRepository extends AbstractCategoryRepository {
   }
 
   async findChildren(parentId: mongoose.Types.ObjectId) {
-    return Category.find({ parentId });
+    return Category.find({ parentId, isActive: true });
   }
 
   async updateStatus(id: mongoose.Types.ObjectId, isActive: boolean) {
@@ -83,5 +83,21 @@ export class CategoryRepository extends AbstractCategoryRepository {
       { name, parentId, level },
       { new: true }
     );
+  }
+  async findAllAncestors(categoryId: mongoose.Types.ObjectId) {
+    return Category.aggregate([
+      {
+        $match: { _id: categoryId }
+      },
+      {
+        $graphLookup: {
+          from: "categories",
+          startWith: "$parentId",
+          connectFromField: "parentId",
+          connectToField: "_id",
+          as: "ancestors"
+        }
+      }
+    ]);
   }
 }

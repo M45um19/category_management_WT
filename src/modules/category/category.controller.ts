@@ -46,7 +46,7 @@ export class CategoryController {
     });
 
     deleteCategory = catchAsync(async (req: Request, res: Response) => {
-        const {id} = req.params;
+        const { id } = req.params;
 
         await this.service.deleteCategory(id as string);
 
@@ -56,9 +56,9 @@ export class CategoryController {
         })
     });
 
-    updateCategory = catchAsync(async (req: Request, res: Response)=> {
-        const {id} = req.params;
-        
+    updateCategory = catchAsync(async (req: Request, res: Response) => {
+        const { id } = req.params;
+
         const updateCategory = await this.service.updateCategory(id as string, req.body)
 
         res.status(200).json({
@@ -67,4 +67,17 @@ export class CategoryController {
             data: updateCategory
         })
     })
+
+    getChildrens = catchAsync(async (req: Request, res: Response) => {
+
+        const { id } = req.params;
+
+        const children = await this.service.getChildrens(id as string);
+
+        res.status(200).json({
+            success: true,
+            data: children
+        });
+
+    });
 }

@@ -14,6 +14,7 @@ router.post(
 router.get("/", controller.getAllCategories);
 router.get("/search", controller.getCategory);
 router.get("/:id", controller.getCategory);
+router.get("/:id/childrens", controller.getChildrens);
 router.patch("/:id/status", controller.updateCategoryStatus);
 router.delete("/:id", controller.deleteCategory);
 router.put("/:id", validateBody(createCategorySchema), controller.updateCategory)

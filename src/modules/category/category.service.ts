@@ -65,7 +65,7 @@ export class CategoryService extends AbstractCategoryService {
 
 
     async getCategory(query: { id?: string; name?: string }) {
-        let categoryData: any;
+        let baseCategory: any;
         let cacheKey: string | null = null;
 
         if (query.id) {
@@ -73,46 +73,46 @@ export class CategoryService extends AbstractCategoryService {
             const cache = await redis.get(cacheKey);
             if (cache) return JSON.parse(cache);
 
-            categoryData = await this.repository.findById(
-                new mongoose.Types.ObjectId(query.id)
-            );
+            baseCategory = await this.repository.findById(new mongoose.Types.ObjectId(query.id));
         } else if (query.name) {
-
-            categoryData = await this.repository.searchByName(query.name);
+            baseCategory = await this.repository.findByName(query.name);
         }
 
-        if (!categoryData || (Array.isArray(categoryData) && categoryData.length === 0)) {
+        if (!baseCategory) {
             throw new Error("Category not found");
         }
-        const buildParentChain = async (cat: any): Promise<any> => {
-            const catObj = cat.toObject ? cat.toObject() : cat;
 
-            if (!catObj.parentId) return catObj;
+        if (!baseCategory.parentId) {
+            if (cacheKey) await redis.set(cacheKey, JSON.stringify(baseCategory), "EX", 3600);
+            return baseCategory;
+        }
 
-            const parent = await this.repository.findById(catObj.parentId);
-            if (!parent) return catObj;
+        const results = await this.repository.findAllAncestors(baseCategory._id);
+        const ancestors = results[0]?.ancestors || [];
+
+        const buildNestedChain = (current: any): any => {
+            const doc = current.toObject ? current.toObject() : current;
+
+            const parentDoc = ancestors.find(
+                (a: any) => a._id.toString() === doc.parentId?.toString()
+            );
+
+            if (!parentDoc) return doc;
 
             return {
-                ...catObj,
-                parent: await buildParentChain(parent),
+                ...doc,
+                parent: buildNestedChain(parentDoc)
             };
         };
 
-        let result;
-        if (Array.isArray(categoryData)) {
-            result = await Promise.all(
-                categoryData.map((cat) => buildParentChain(cat))
-            );
-        } else {
-            result = await buildParentChain(categoryData);
-        }
-        if (cacheKey && result) {
-            await redis.set(cacheKey, JSON.stringify(result), "EX", 3600);
+        const finalResult = buildNestedChain(baseCategory);
+
+        if (cacheKey) {
+            await redis.set(cacheKey, JSON.stringify(finalResult), "EX", 3600);
         }
 
-        return result;
+        return finalResult;
     }
-
 
     async updateCategoryStatus(id: string, isActive: boolean) {
 
@@ -192,8 +192,8 @@ export class CategoryService extends AbstractCategoryService {
 
             level = parent.level + 1;
         }
-        if(data.parentId === null){
-            level=1;
+        if (data.parentId === null) {
+            level = 1;
             parentObjectId = null;
         }
         const updatedCategory = await this.repository.updateCategory(
@@ -214,5 +214,14 @@ export class CategoryService extends AbstractCategoryService {
         }
 
         return updatedCategory;
+    }
+
+    async getChildrens(categoryId: string) {
+        const parentObjectId = new mongoose.Types.ObjectId(categoryId);
+        const children = await this.repository.findChildren(parentObjectId);
+        if (!children) {
+            throw new Error("Category not found");
+        }
+        return children;
     }
 }
