@@ -16,7 +16,7 @@ export class CategoryController {
 
     getAllCategories = catchAsync(async (req: Request, res: Response) => {
         const categories = await this.service.getAllCategories();
-        res.status(200).json({ success: true, data: categories });
+        res.status(200).json({ success: true, message: "All category fetch seccessfully", data: categories });
     });
 
 
@@ -29,7 +29,7 @@ export class CategoryController {
             name: name as string,
         });
 
-        res.status(200).json({ success: true, data: category });
+        res.status(200).json({ success: true, message: "Category fetch sucessfully", data: category });
     });;
 
     updateCategoryStatus = catchAsync(async (req: Request, res: Response) => {
@@ -76,6 +76,7 @@ export class CategoryController {
 
         res.status(200).json({
             success: true,
+            message: "All children fetch successfully",
             data: children
         });
 
