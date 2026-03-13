@@ -69,12 +69,20 @@ Base URL: `http://localhost:5000/graphql`
 ## Run Project
 
 - Clone the project
-- Install Docker to your machine
-- Go to the project folder and run
+
+- Make a `.env` file and put
+
+```env
+PORT=5000 (or any free port of your pc)
+MONGO_URI=mongodb://mongo:27017/categorydb
+REDIS_HOST=redis
+REDIS_PORT=6379
 ```
+
+- Install Docker to your machine
+
+- Go to the project folder and run
+
 ```bash
 docker compose up --build
 ```
-
----
-
