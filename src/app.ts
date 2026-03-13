@@ -10,7 +10,6 @@ const app = express();
 
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
 app.use(hpp());
 app.use(generalLimiter)
 app.get("/", (req: Request, res: Response) => {
@@ -20,8 +19,7 @@ app.get("/", (req: Request, res: Response) => {
     });
 });
 
-app.use("/api/v1", rootRouter)
-
+app.use("/api/v1", express.json(), rootRouter);
 app.use(globalErrorHandler);
 
 export default app;

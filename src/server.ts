@@ -1,17 +1,34 @@
+// src/server.ts
 import app from "./app";
 import { connectDB } from "./config/database";
 import { redis } from "./config/redis";
 import { env } from "./config/env";
+import { startGraphQL } from "./graphql/server";
 
-const PORT = env.PORT || 5000;
+async function bootstrap() {
+    try {
+        await connectDB();
 
-async function start() {
-  await connectDB();
+        await startGraphQL(app);
 
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Redis status: ${redis.status}`);
-});
+        const server = app.listen(env.PORT || 5000, () => {
+            console.log(`Server: http://localhost:${env.PORT}`);
+            console.log(`GraphQL: http://localhost:${env.PORT}/graphql`);
+            console.log(`Redis status: ${redis.status}`);
+          });
+
+        process.on("SIGTERM", () => {
+            console.log("SIGTERM received. Closing server...");
+            server.close(() => {
+                redis.disconnect();
+                process.exit(0);
+            });
+        });
+
+    } catch (error) {
+        console.error("Bootstrap Error:", error);
+        process.exit(1);
+    }
 }
 
-start();
+bootstrap();

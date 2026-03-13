@@ -8,4 +8,5 @@ const categoryController = new CategoryController(categoryService);
 
 export const CategoryModule = {
   controller: categoryController,
+  service: categoryService
 };
