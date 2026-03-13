@@ -34,6 +34,7 @@ export abstract class AbstractCategoryRepository {
     abstract updateCategory(categoyrId: mongoose.Types.ObjectId, name: string, parentId?: mongoose.Types.ObjectId | null, level?: number): Promise<any>
 
     abstract findAllAncestors(categoryId: mongoose.Types.ObjectId): Promise<any>
+    abstract updateDescendantsLevel( parentId: mongoose.Types.ObjectId, levelDiff: number): Promise<any>
 }
 
 

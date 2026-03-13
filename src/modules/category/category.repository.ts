@@ -100,4 +100,35 @@ export class CategoryRepository extends AbstractCategoryRepository {
       }
     ]);
   }
+
+async updateDescendantsLevel(
+  parentId: mongoose.Types.ObjectId,
+  levelDiff: number
+) {
+
+  const result = await Category.aggregate([
+    {
+      $match: { _id: parentId }
+    },
+    {
+      $graphLookup: {
+        from: "categories",
+        startWith: "$_id",
+        connectFromField: "_id",
+        connectToField: "parentId",
+        as: "descendants"
+      }
+    }
+  ]);
+
+  const descendants = result[0]?.descendants || [];
+
+  if (descendants.length === 0) return;
+
+  const ids = descendants.map((d: any) => new mongoose.Types.ObjectId(d._id));
+  return Category.updateMany(
+    { _id: { $in: ids } },
+    { $inc: { level: levelDiff } }
+  );
+}
 }
