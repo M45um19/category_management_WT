@@ -71,7 +71,7 @@ Base URL: `http://localhost:5000/graphql`
 - Clone the project
 - Install Docker to your machine
 - Go to the project folder and run
-
+```
 ```bash
 docker compose up --build
 ```
